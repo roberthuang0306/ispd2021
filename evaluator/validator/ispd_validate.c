@@ -81,11 +81,11 @@ void print_problem(struct problem *prob)
     int heatmap_num = 0;
     if (dimension == 2)
     {
-        heatmap_num = prob->volume_shape[0] * prob->volume_shape[1];
+        heatmap_num = (prob->volume_shape[0] + 1) * (prob->volume_shape[1] + 1);
     }
     else
     {
-        heatmap_num = prob->volume_shape[0] * prob->volume_shape[1] * prob->volume_shape[2];
+        heatmap_num = (prob->volume_shape[0] + 1) * (prob->volume_shape[1] + 1) * (prob->volume_shape[2] + 1);
     }
     for (int i = 0; i < heatmap_num; i += 1)
     {
@@ -131,7 +131,8 @@ void print_prism(struct prism *p, int tabs, bool print_range)
         printf("Range:");
         for (int j = 0; j < dimension; j += 1)
         {
-            printf(" %c: [%d,%d]", j == 0 ? 'x' : j == 1 ? 'y' : 'z',
+            printf(" %c: [%d,%d]", j == 0 ? 'x' : j == 1 ? 'y'
+                                                         : 'z',
                    p->origin[j],
                    get_close(p, j));
         }
@@ -274,7 +275,8 @@ void print_bounds(const node_bounds *bounds, int tabs)
     printf("Bounds:");
     for (int j = 0; j < dimension; j += 1)
     {
-        printf(" %c: [%d,%d]", j == 0 ? 'x' : j == 1 ? 'y' : 'z',
+        printf(" %c: [%d,%d]", j == 0 ? 'x' : j == 1 ? 'y'
+                                                     : 'z',
                bounds->low_bounds[j],
                bounds->up_bounds[j]);
     }
@@ -1894,15 +1896,18 @@ double score_solution()
     double accuracy_norm = accuracy / max_accuracy;
     double wires_norm = min_d(max_wires_tot / wires, max_wires_curr / wires);
 
+    double final_score = prob->cost.alpha * accuracy_norm + prob->cost.beta * wires_norm;
+
     if (opt.flags & SCORE)
     {
         printf("Pure Accuracy: %f / %f\n", accuracy, max_accuracy);
         printf("Pure Connectivity: %f / (%f or %f)\n", wires, max_wires_tot, max_wires_curr);
         printf("Normalized Accuracy: %f\n", accuracy_norm);
         printf("Normalized Connectivity: %f\n", wires_norm);
+        printf("Final Score: %f\n", final_score);
     }
 
-    return prob->cost.alpha * accuracy_norm + prob->cost.beta * wires_norm;
+    return final_score;
 }
 
 int main(int argc, char **argv)
