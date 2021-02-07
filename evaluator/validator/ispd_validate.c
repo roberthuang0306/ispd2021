@@ -1768,7 +1768,6 @@ double score_tile_accuracy(struct tile *t, double scale)
 double score_accuracy()
 {
     double scale = find_max_scale();
-    printf("%f",scale);
 
     fatalif(scale < 1.0, "Scale cannot be less than 1");
 

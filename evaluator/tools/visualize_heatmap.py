@@ -6,7 +6,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re
-from mpl_toolkits.mplot3d import Axes3D
 
 def get_next_line(file: str) -> str:
     with open(file) as f:
@@ -24,11 +23,13 @@ def visualize_heatmap(filename: str, out: str, interpolate: bool):
 
     dim = int(next(iterator))
     volume = [int(x) for x in re.findall(r'\d+', next(iterator))]
+    gpte = int(next(iterator))
     fabric = [int(x) for x in re.findall(r'\d+', next(iterator))]
     cost = [float(x) for x in re.findall(r'\d+\.?\d*', next(iterator))]
 
     print(dim)
     print(volume)
+    print(gpte)
     print(fabric)
     print(cost)
 
