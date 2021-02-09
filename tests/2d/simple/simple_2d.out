@@ -1,7 +1,7 @@
 # Inverse sampling step
-160
+320
 # Prism
-3 0 0 4 4
+4 0 0 4 4
 compute_map:
 0 0
 0 1

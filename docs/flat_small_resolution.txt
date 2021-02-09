@@ -1,0 +1,15 @@
+[OK] - Overlap Validated
+[OK] - Coverage Validated
+[OK] - Connectivity Validated
+[OK] - PE Fit Validated
+1.800000Resolution Difference:
+2.000000 3.600000
+2.000000 3.600000
+2.000000 3.600000
+2.000000 3.600000
+End Resolution Difference
+Total Wire Length: 12.000000
+Pure Accuracy: 4.000000 / 16.000000
+Pure Connectivity: 6.166711 / (16.000000 or 6.349604)
+Normalized Accuracy: 0.250000
+Normalized Connectivity: 1.029658
