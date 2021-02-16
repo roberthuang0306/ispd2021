@@ -9,30 +9,31 @@
 
 using namespace std;
 
+#define verbal
+
 class Tile;
 class FP;
 
-// Max Dimension
-typedef vector< vector<int> > adjacent_list;
+struct adjacent
+{
+    adjacent(int i, int f) :id(i), face(f) {}
+    int id;
+    int face;
+};
+typedef vector< vector<adjacent> > adjacent_list;
 
 
 class Tile
 {
 public:
-    Tile(int Id, int* HeatMapPos) {
-        _Id = Id;
-        _R = 0;
-        _HeatMapPos = new int [_Dimension];
-        for(int i = 0; i < _Dimension; ++i) _HeatMapPos[i] = HeatMapPos[i];
-    }
+    Tile(int Id, int* HeatMapPos);
+    Tile(const Tile& t);
+    ~Tile();
 
-    ~Tile() {
-        delete [] _HeatMapPos;
-    }
+    static void setDimension(int Dimension);
 
-    static void setDimension(int Dimension) {
-        _Dimension = Dimension;
-    }
+    // Debug
+    void print();
 
 private:
     int _Id;
@@ -50,16 +51,20 @@ public:
     FP();
     ~FP();
     int             readHeatMap(const string& filename);            // Read an input HeatMap
+    void            setComputeRatio(const double& r);               // Expected ratio of computation tiles among all tiles
     void            Calculate_S();                                  // Calculate inverse sampling step
     void            Init_Partition();                               // Initialize Tiles and Connectivities
-    void            setComputeRatio(const double& r);
     void            Partition();                                    // Find a legal partition of HeatMap
+    void            Calculate_nAdapters();                          // Calculate the number of needed Adapters
     void            Place();                                        // Place all the tiles and adpaters on PE array
 
     inline double   HeatMap_Resolution(int x, int y, int z=0);
 
     // Debug
     void            printHeatMap();
+    void            printTiles();
+    void            printConnectivities();
+    void            setS(int s) {_S = s;}
     
 private:
     // Input

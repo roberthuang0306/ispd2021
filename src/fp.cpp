@@ -1,6 +1,55 @@
 #include "fp.h"
 
+
+// Tile
+// ************************************************************
+
 int Tile::_Dimension = 0;
+
+Tile::Tile(int Id, int* HeatMapPos)
+{
+    _Id = Id;
+    _R = 0;
+    _HeatMapPos = new int [_Dimension];
+    for(int i = 0; i < _Dimension; ++i) _HeatMapPos[i] = HeatMapPos[i];
+}
+
+Tile::Tile(const Tile& t)
+{
+    _Id = t._Id;
+    _R = t._R;
+    _HeatMapPos = new int [_Dimension];
+    for(int i = 0; i < _Dimension; ++i) _HeatMapPos[i] = t._HeatMapPos[i];
+    for(int i = 0; i < 2; ++i) _PEPos[i] = t._PEPos[i];
+}
+
+Tile::~Tile()
+{
+    delete [] _HeatMapPos;
+}
+
+void Tile::setDimension(int Dimension)
+{
+    _Dimension = Dimension;
+}
+
+void Tile::print()
+{
+    cout << _Id << "\t" << _R << "\t";
+    for(int i = 0; i < _Dimension; ++i) {
+        cout << _HeatMapPos[i] << " ";
+    }
+    cout << endl;
+}
+
+// ************************************************************
+
+
+
+
+
+// FP
+// ************************************************************
 
 FP::FP()
 {
@@ -108,10 +157,14 @@ void FP::Calculate_S()
 
 void FP::Init_Partition()
 {
-    assert(_S%10 == 0);
     Tile::setDimension(_Dimension);
+    int n_sampling_points = _S * _HeatMapSize[0] * _S * _HeatMapSize[1];
+    if(_Dimension == 3) n_sampling_points *= (_S * _HeatMapSize[2]);
+
+    // initialize tiles according to _S
     _Tiles.clear();
-    int id;
+    _Tiles.reserve(n_sampling_points);
+    int id = 0;
     int* pos = new int[_Dimension];
     for(int z = 0; z < (_Dimension == 2 ? 1 : _S * _HeatMapSize[2]); ++z) {
         if (_Dimension == 3) pos[2] = z;
@@ -125,10 +178,9 @@ void FP::Init_Partition()
     }
     delete [] pos;
 
+    // initialize connectivity
     _Connectivities.clear();
-    int n_sampling_points = _S * _HeatMapSize[0] * _S * _HeatMapSize[1];
-    if(_Dimension == 3) n_sampling_points *= (_S * _HeatMapSize[2]);
-    for(int i = 0; i < n_sampling_points; ++i) _Connectivities.emplace_back();
+    _Connectivities.resize(n_sampling_points);
     bool left, right, front, back, down, up;
     id = 0;
     for(int z = 0; z < (_Dimension == 2 ? 1 : _S * _HeatMapSize[2]); ++z) {
@@ -140,12 +192,12 @@ void FP::Init_Partition()
             for(int x = 0; x < _S * _HeatMapSize[0]; ++x) {
                 left = (x != 0);
                 right = (x != _S * _HeatMapSize[0] - 1);
-                if(left) _Connectivities[id].push_back(id - 1);
-                if(right) _Connectivities[id].push_back(id + 1);
-                if(front) _Connectivities[id].push_back(id - _S * _HeatMapSize[0]);
-                if(back) _Connectivities[id].push_back(id + _S * _HeatMapSize[0]);
-                if(_Dimension == 3 && down) _Connectivities[id].push_back(id - _S * _HeatMapSize[0] * _S * _HeatMapSize[1]);
-                if(_Dimension == 3 && up) _Connectivities[id].push_back(id + _S * _HeatMapSize[0] * _S * _HeatMapSize[1]);
+                if(left) _Connectivities[id].emplace_back(id - 1, 0);
+                if(right) _Connectivities[id].emplace_back(id + 1, 1);
+                if(front) _Connectivities[id].emplace_back(id - _S * _HeatMapSize[0], 2);
+                if(back) _Connectivities[id].emplace_back(id + _S * _HeatMapSize[0], 3);
+                if(_Dimension == 3 && down) _Connectivities[id].emplace_back(id - _S * _HeatMapSize[0] * _S * _HeatMapSize[1], 4);
+                if(_Dimension == 3 && up) _Connectivities[id].emplace_back(id + _S * _HeatMapSize[0] * _S * _HeatMapSize[1], 5);
                 ++id;
             }
         }
@@ -170,19 +222,6 @@ inline double FP::HeatMap_Resolution(int x, int y, int z)
 
 // Private Funcs
 
-void FP::printHeatMap()
-{
-    for(int k = 0; k < (_Dimension == 2 ? 1 : _HeatMapSize[2] + 1); ++k) {
-        for(int j = 0; j < _HeatMapSize[1] + 1; ++j) {
-            for(int i = 0; i < _HeatMapSize[0] + 1; ++i) {
-                cout << i << " " << j;
-                if(_Dimension == 3) cout << " " << k;
-                cout << "    " << _HeatMap[i][j][k] << endl;
-            }
-        }
-    }
-}
-
 double FP::Integral_Resolution3()
 {
     // TODO
@@ -197,6 +236,41 @@ double FP::Integral_Resolution(int* origin, int* width)
 }
 
 
+// Debug
+
+void FP::printHeatMap()
+{
+    for(int k = 0; k < (_Dimension == 2 ? 1 : _HeatMapSize[2] + 1); ++k) {
+        for(int j = 0; j < _HeatMapSize[1] + 1; ++j) {
+            for(int i = 0; i < _HeatMapSize[0] + 1; ++i) {
+                cout << i << " " << j;
+                if(_Dimension == 3) cout << " " << k;
+                cout << "    " << _HeatMap[i][j][k] << endl;
+            }
+        }
+    }
+}
+
+void FP::printTiles()
+{
+    cout << "Tiles:" << endl;
+    for(size_t i = 0; i < _Tiles.size(); ++i)
+        _Tiles[i].print();
+    cout << endl;
+}
+
+void FP::printConnectivities()
+{
+    cout << "Connectivities:" << endl;
+    for(size_t i = 0; i < _Connectivities.size(); ++i) {
+        for(size_t j = 0; j < _Connectivities[i].size(); ++j) {
+            cout << i << "\t" << _Connectivities[i][j].id << "\t" << _Connectivities[i][j].face << endl;
+        }
+    }
+    cout << endl;
+}
+
+
 // Utils
 
 const string& FP::getLineNextToken(const string& line, size_t& start, bool begin)
@@ -206,3 +280,5 @@ const string& FP::getLineNextToken(const string& line, size_t& start, bool begin
     start = end + 1;
     return s;
 }
+
+// ************************************************************
