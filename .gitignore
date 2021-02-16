@@ -1,1 +1,7 @@
+<<<<<<< HEAD
 out/
+=======
+evaluator/out/
+*.o
+fp
+>>>>>>> a577815aa3d22cbf40fa63d215d907e48a4e2479
