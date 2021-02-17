@@ -4,27 +4,26 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include <vector>
 #include <cassert>
 
 using namespace std;
 
-#define verbal
 
 class Tile;
+class Adjacents;
 class FP;
 
-struct adjacent
-{
-    adjacent(int i, int f) :id(i), face(f) {}
-    int id;
-    int face;
-};
-typedef vector< vector<adjacent> > adjacent_list;
+#define FaceNum(dimension) (2 * dimension)
+#define MaxNeighborNum(dimension) (1 << (dimension-1))
+
+typedef vector<Adjacents> adjacent_list;
 
 
 class Tile
 {
+friend class FP;
 public:
     Tile(int Id, int* HeatMapPos);
     Tile(const Tile& t);
@@ -44,6 +43,30 @@ private:
 
     static int _Dimension;
 };
+
+
+class Adjacents
+{
+friend class FP;
+public:
+    Adjacents();
+    ~Adjacents();
+
+    inline int entry(int face, int i);
+    inline int size(int face);
+    inline void push(int id, int face);
+
+    static void setDimension(int Dimension);
+
+    // Debug
+    void print();
+
+private:
+    int** _Adjacents;       // Ids sorted by face
+    int* _Size;             // Number of adjacents of each face
+    static int _Dimension;
+};
+
 
 class FP
 {
@@ -91,9 +114,12 @@ private:
 
 
     // Funcs
+    // For calculating heatmap resolution
     double          Integral_Resolution3();                         // Integrate Resolution^3 over the entire heatmap
     double          Integral_Resolution(int* origin, int* width);   // Integrate Resolution over some area in sampling space
 
+    // For Partition
+    bool            isEdge(int tid);                                // check if the tile has different resolution adjacents
 
     // Utils
     const string&   getLineNextToken(const string& line, size_t& start, bool begin=false);

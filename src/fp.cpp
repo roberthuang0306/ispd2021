@@ -30,6 +30,7 @@ Tile::~Tile()
 
 void Tile::setDimension(int Dimension)
 {
+    assert(Dimension == 2 || Dimension == 3);
     _Dimension = Dimension;
 }
 
@@ -40,6 +41,61 @@ void Tile::print()
         cout << _HeatMapPos[i] << " ";
     }
     cout << endl;
+}
+
+// ************************************************************
+
+
+
+
+
+// Adjacents
+// ************************************************************
+
+int Adjacents::_Dimension = 0;
+
+Adjacents::Adjacents()
+{
+    _Adjacents = new int*[FaceNum(_Dimension)];
+    for(int i = 0; i < FaceNum(_Dimension); ++i) {
+        _Adjacents[i] = new int[MaxNeighborNum(_Dimension)];
+    }
+    _Size = new int[FaceNum(_Dimension)]();
+}
+
+Adjacents::~Adjacents()
+{
+    for(int i = 0; i < FaceNum(_Dimension); ++i) {
+        delete [] _Adjacents[i];
+    }
+    delete _Adjacents;
+    delete [] _Size;
+}
+
+int Adjacents::entry(int face, int i)
+{
+    assert(face < FaceNum(_Dimension));
+    assert(i < size(face));
+    return _Adjacents[face][i];
+}
+
+int Adjacents::size(int face)
+{
+    assert(face < FaceNum(_Dimension));
+    return _Size[face];
+}
+
+void Adjacents::push(int id, int face)
+{
+    assert(face < FaceNum(_Dimension));
+    assert(_Size[face] < MaxNeighborNum(_Dimension));
+    _Adjacents[face][_Size[face]++] = id;
+}
+
+void Adjacents::setDimension(int Dimension)
+{
+    assert(Dimension == 2 || Dimension == 3);
+    _Dimension = Dimension;
 }
 
 // ************************************************************
@@ -179,6 +235,7 @@ void FP::Init_Partition()
     delete [] pos;
 
     // initialize connectivity
+    Adjacents::setDimension(_Dimension);
     _Connectivities.clear();
     _Connectivities.resize(n_sampling_points);
     bool left, right, front, back, down, up;
@@ -192,12 +249,12 @@ void FP::Init_Partition()
             for(int x = 0; x < _S * _HeatMapSize[0]; ++x) {
                 left = (x != 0);
                 right = (x != _S * _HeatMapSize[0] - 1);
-                if(left) _Connectivities[id].emplace_back(id - 1, 0);
-                if(right) _Connectivities[id].emplace_back(id + 1, 1);
-                if(front) _Connectivities[id].emplace_back(id - _S * _HeatMapSize[0], 2);
-                if(back) _Connectivities[id].emplace_back(id + _S * _HeatMapSize[0], 3);
-                if(_Dimension == 3 && down) _Connectivities[id].emplace_back(id - _S * _HeatMapSize[0] * _S * _HeatMapSize[1], 4);
-                if(_Dimension == 3 && up) _Connectivities[id].emplace_back(id + _S * _HeatMapSize[0] * _S * _HeatMapSize[1], 5);
+                if(left) _Connectivities[id].push(id - 1, 0);
+                if(right) _Connectivities[id].push(id + 1, 1);
+                if(front) _Connectivities[id].push(id - _S * _HeatMapSize[0], 2);
+                if(back) _Connectivities[id].push(id + _S * _HeatMapSize[0], 3);
+                if(_Dimension == 3 && down) _Connectivities[id].push(id - _S * _HeatMapSize[0] * _S * _HeatMapSize[1], 4);
+                if(_Dimension == 3 && up) _Connectivities[id].push(id + _S * _HeatMapSize[0] * _S * _HeatMapSize[1], 5);
                 ++id;
             }
         }
@@ -211,16 +268,24 @@ void FP::setComputeRatio(const double& r)
 
 void FP::Partition()
 {
+    int R = 1;
+    while(true)
+    {
 
+        ++R;
+    }
+    
 }
 
-inline double FP::HeatMap_Resolution(int x, int y, int z)
+double FP::HeatMap_Resolution(int x, int y, int z)
 {
     return _HeatMap[x][y][z];
 }
 
 
 // Private Funcs
+
+// For calculating heatmap resolution
 
 double FP::Integral_Resolution3()
 {
@@ -235,6 +300,17 @@ double FP::Integral_Resolution(int* origin, int* width)
     return 0.0;
 }
 
+// For Partition
+
+bool FP::isEdge(int tid)
+{
+    for(int face = 0; face < 2*_Dimension; ++face) {
+        if(_Connectivities[tid].size(face) == MaxNeighborNum(_Dimension)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 // Debug
 
@@ -262,9 +338,11 @@ void FP::printTiles()
 void FP::printConnectivities()
 {
     cout << "Connectivities:" << endl;
-    for(size_t i = 0; i < _Connectivities.size(); ++i) {
-        for(size_t j = 0; j < _Connectivities[i].size(); ++j) {
-            cout << i << "\t" << _Connectivities[i][j].id << "\t" << _Connectivities[i][j].face << endl;
+    for(size_t id = 0; id < _Connectivities.size(); ++id) {
+        for(int face = 0; face < 2*_Dimension; ++face) {
+            for(int i = 0; i < _Connectivities[id].size(face); ++i) {
+                cout << id << "\t" << face << "\t"  << _Connectivities[id].entry(face, i)<< endl;
+            }
         }
     }
     cout << endl;
