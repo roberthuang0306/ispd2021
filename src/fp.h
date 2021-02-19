@@ -15,8 +15,8 @@ class Tile;
 class Adjacents;
 class FP;
 
-#define FaceNum(dimension) (2 * dimension)
-#define MaxNeighborNum(dimension) (1 << (dimension-1))
+#define FaceNum(dimension)          (2 * dimension)
+#define MaxNeighborNum(dimension)   (1 << (dimension-1))
 
 typedef vector<Adjacents> adjacent_list;
 
@@ -38,7 +38,7 @@ private:
     int _Id;
     int _R;                 // 2^(-R) = Resolution
 
-    int* _HeatMapPos;       // x10 -> sampling space
+    int* _HeatMapPos;       // Position in sample space
     int _PEPos[2];
 
     static int _Dimension;
@@ -57,9 +57,6 @@ public:
     inline void push(int id, int face);
 
     static void setDimension(int Dimension);
-
-    // Debug
-    void print();
 
 private:
     int** _Adjacents;       // Ids sorted by face
@@ -100,7 +97,7 @@ private:
     double          _CostCoefficients[2];                           // Alpha and Beta
     
     // Solution
-    int             _S;                                             // x10 -> inverse sampling step
+    int             _S;                                             // inverse sampling step
     vector<Tile>    _Tiles;
 
     adjacent_list   _Connectivities;
@@ -119,6 +116,7 @@ private:
     double          Integral_Resolution(int* origin, int* width);   // Integrate Resolution over some area in sampling space
 
     // For Partition
+    inline int      SamplingSpaceWidth(int axis);                   // Width of some axis of the sampling space
     bool            isEdge(int tid);                                // check if the tile has different resolution adjacents
 
     // Utils

@@ -215,20 +215,20 @@ void FP::Calculate_S()
 void FP::Init_Partition()
 {
     Tile::setDimension(_Dimension);
-    int n_sampling_points = _S * _HeatMapSize[0] * _S * _HeatMapSize[1];
-    if(_Dimension == 3) n_sampling_points *= (_S * _HeatMapSize[2]);
+    int n_sampling_points = SamplingSpaceWidth(0) * SamplingSpaceWidth(1);
+    if(_Dimension == 3) n_sampling_points *= SamplingSpaceWidth(2);
 
     // initialize tiles according to _S
     _Tiles.clear();
     _Tiles.reserve(n_sampling_points);
     int id = 0;
     int* pos = new int[_Dimension];
-    for(int z = 0; z < (_Dimension == 2 ? 1 : _S * _HeatMapSize[2]); ++z) {
-        if (_Dimension == 3) pos[2] = z;
-        for(int y = 0; y < _S * _HeatMapSize[1]; ++y) {
-            pos[1] = y;
-            for(int x = 0; x < _S * _HeatMapSize[0]; ++x) {
-                pos[0] = x;
+    for(int z = 0; z < (_Dimension == 2 ? 1 : SamplingSpaceWidth(2)); ++z) {
+        if (_Dimension == 3) pos[2] = _S * z;
+        for(int y = 0; y < SamplingSpaceWidth(1); ++y) {
+            pos[1] = _S * y;
+            for(int x = 0; x < SamplingSpaceWidth(0); ++x) {
+                pos[0] = _S * x;
                 _Tiles.emplace_back(id++, pos);
             }
         }
@@ -241,21 +241,23 @@ void FP::Init_Partition()
     _Connectivities.resize(n_sampling_points);
     bool left, right, front, back, down, up;
     id = 0;
-    for(int z = 0; z < (_Dimension == 2 ? 1 : _S * _HeatMapSize[2]); ++z) {
-        down = (z != 0);
-        up = (z != _S * _HeatMapSize[2] - 1);
-        for(int y = 0; y < _S * _HeatMapSize[1]; ++y) {
+    for(int z = 0; z < (_Dimension == 2 ? 1 : SamplingSpaceWidth(2)); ++z) {
+        if(_Dimension == 3) {
+            down = (z != 0);
+            up = (z != SamplingSpaceWidth(2) - 1);
+        }
+        for(int y = 0; y < SamplingSpaceWidth(1); ++y) {
             front = (y != 0);
-            back = (y != _S * _HeatMapSize[1] - 1);
-            for(int x = 0; x < _S * _HeatMapSize[0]; ++x) {
+            back = (y != SamplingSpaceWidth(1) - 1);
+            for(int x = 0; x < SamplingSpaceWidth(0); ++x) {
                 left = (x != 0);
-                right = (x != _S * _HeatMapSize[0] - 1);
+                right = (x != SamplingSpaceWidth(0) - 1);
                 if(left) _Connectivities[id].push(id - 1, 0);
                 if(right) _Connectivities[id].push(id + 1, 1);
-                if(front) _Connectivities[id].push(id - _S * _HeatMapSize[0], 2);
-                if(back) _Connectivities[id].push(id + _S * _HeatMapSize[0], 3);
-                if(_Dimension == 3 && down) _Connectivities[id].push(id - _S * _HeatMapSize[0] * _S * _HeatMapSize[1], 4);
-                if(_Dimension == 3 && up) _Connectivities[id].push(id + _S * _HeatMapSize[0] * _S * _HeatMapSize[1], 5);
+                if(front) _Connectivities[id].push(id - SamplingSpaceWidth(0), 2);
+                if(back) _Connectivities[id].push(id + SamplingSpaceWidth(0), 3);
+                if(_Dimension == 3 && down) _Connectivities[id].push(id - SamplingSpaceWidth(0) * SamplingSpaceWidth(1), 4);
+                if(_Dimension == 3 && up) _Connectivities[id].push(id + SamplingSpaceWidth(0) * SamplingSpaceWidth(1), 5);
                 ++id;
             }
         }
@@ -426,6 +428,15 @@ double FP::Integral_Resolution(int* origin, int* width)
 }
 
 // For Partition
+
+int FP::SamplingSpaceWidth(int axis)
+{
+    assert(_S);
+    assert(axis < _Dimension);
+    int tmp = _S * _HeatMapSize[axis];
+    if(tmp % 10) return tmp/10 + 1;
+    else return tmp/10;
+}
 
 bool FP::isEdge(int tid)
 {
