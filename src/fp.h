@@ -7,6 +7,7 @@
 #include <cstring>
 #include <vector>
 #include <cassert>
+#include <cmath>
 
 using namespace std;
 
@@ -79,6 +80,7 @@ public:
     void            Place();                                        // Place all the tiles and adpaters on PE array
 
     inline double   HeatMap_Resolution(int x, int y, int z=0);
+    inline double   HeatMap_Resolution(double x, double y, double z=0);
 
     // Debug
     void            printHeatMap();
@@ -113,7 +115,7 @@ private:
     // Funcs
     // For calculating heatmap resolution
     double          Integral_Resolution3();                         // Integrate Resolution^3 over the entire heatmap
-    double          Integral_Resolution(int* origin, int* width);   // Integrate Resolution over some area in sampling space
+    double          Integral_Resolution(const int* const origin, int width);   // Integrate Resolution over some area in sampling space
 
     // For Partition
     inline int      SamplingSpaceWidth(int axis);                   // Width of some axis of the sampling space
