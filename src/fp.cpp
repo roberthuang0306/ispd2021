@@ -208,6 +208,7 @@ int FP::readHeatMap(const string& filename)
 void FP::Calculate_S()
 {
     // TODO
+    // inv_sampling_step
     _S = 0;
 }
 
@@ -279,6 +280,7 @@ void FP::Partition()
 
 double FP::HeatMap_Resolution(int x, int y, int z)
 {
+    // d=2時, z always = 0
     return _HeatMap[x][y][z];
 }
 
@@ -290,12 +292,135 @@ double FP::HeatMap_Resolution(int x, int y, int z)
 double FP::Integral_Resolution3()
 {
     // TODO
-    return 0.0;
+    double integral = 0.0;
+    if( _Dimension == 2){
+        for( int i = 0; i < _HeatMapSize[0]-1; ++i){
+            for ( int j = 0; j < _HeatMapSize[1]-1; ++j){
+                // ax+by+cxy+d = r
+                // compute r^2
+                double r_0 = HeatMap_Resolution(i, j, 0), 
+                       r_1 = HeatMap_Resolution(i+1, j, 0), 
+                       r_2 = HeatMap_Resolution(i, j+1, 0), 
+                       r_3 = HeatMap_Resolution(i+1, j+1, 0);
+                double a = r_1-r_0,
+                       b = r_2-r_0,
+                       c = r_3-r_1-r_2+r_0,
+                       d = r_0;
+
+                vector<double> r_Constants = {a, b, c, d};
+                vector<int> r_xPowers = {1, 0, 1, 0};
+                vector<int> r_yPowers = {0, 1, 1, 0};
+                vector<double> r2_Constants;
+                vector<double> r2_xPowers;
+                vector<double> r2_yPowers;
+
+                for( auto& C1: r_Constants){
+                    for( auto& C2: r_Constants){
+                        r2_Constants.push_back(C1*C2);
+                    }
+                }
+                for( auto& P1: r_xPowers){
+                    for( auto& P2: r_xPowers){
+                        r2_xPowers.push_back(P1+P2);
+                    }
+                }
+                for( auto& P1: r_yPowers){
+                    for( auto& P2: r_yPowers){
+                        r2_yPowers.push_back(P1+P2);
+                    }
+                }
+                assert(r2_Constants.size() == 16);
+                assert(r2_xPowers.size() == 16);
+                assert(r2_yPowers.size() == 16);
+
+                for( int cnt = 0; cnt < 16; ++cnt){
+                    integral += r2_Constants[cnt]* 1/((double)r2_xPowers[cnt]+1)* 1/((double)r2_yPowers[cnt]+1);
+                }
+            }
+        }
+    }
+    else if( _Dimension == 3){
+        for( int i = 0; i < _HeatMapSize[0]-1; ++i){
+            for ( int j = 0; j < _HeatMapSize[1]-1; ++j){
+                for ( int k = 0; k < _HeatMapSize[2]-1; ++k){
+                    // ax+by+cz+dxy+exz+fyz+gxyz+h = r
+                    // compute r^3
+                    double r_0 = HeatMap_Resolution(i, j, k),
+                           r_1 = HeatMap_Resolution(i+1, j, k), 
+                           r_2 = HeatMap_Resolution(i, j+1, k), 
+                           r_3 = HeatMap_Resolution(i, j, k+1), 
+                           r_4 = HeatMap_Resolution(i+1, j+1, k), 
+                           r_5 = HeatMap_Resolution(i+1, j, k+1), 
+                           r_6 = HeatMap_Resolution(i, j+1, k+1), 
+                           r_7 = HeatMap_Resolution(i+1, j+1, k+1);
+                    double a = r_1-r_0,
+                           b = r_2-r_0,
+                           c = r_3-r_0,
+                           d = r_4-r_1-r_2+r_0,
+                           e = r_5-r_1-r_3+r_0,
+                           f = r_6-r_2-r_3+r_0,
+                           g = r_7-r_6-r_5-r_4+r_1+r_2+r_3-r_0,
+                           h = r_0;
+
+
+                    vector<double> r_Constants = {a, b, c, d, e, f, g, h};
+                    vector<int> r_xPowers = {1, 0, 0, 1, 1, 0, 1, 0};
+                    vector<int> r_yPowers = {0, 1, 0, 1, 0, 1, 1, 0};
+                    vector<int> r_zPowers = {0, 0, 1, 0, 1, 1, 1, 0};
+                    vector<double> r3_Constants;
+                    vector<double> r3_xPowers;
+                    vector<double> r3_yPowers;
+                    vector<double> r3_zPowers;
+
+                    for( auto& C1: r_Constants){
+                        for( auto& C2: r_Constants){
+                            for( auto& C3: r_Constants){
+                                r3_Constants.push_back(C1*C2*C3);
+                            }
+                        }
+                    }
+                    for( auto& P1: r_xPowers){
+                        for( auto& P2: r_xPowers){
+                            for( auto& P3: r_xPowers){
+                                r3_xPowers.push_back(P1+P2+P3);
+                            }
+                        }
+                    }
+                    for( auto& P1: r_yPowers){
+                        for( auto& P2: r_yPowers){
+                            for( auto& P3: r_yPowers){
+                                r3_yPowers.push_back(P1+P2+P3);
+                            }
+                        }
+                    }
+                    for( auto& P1: r_zPowers){
+                        for( auto& P2: r_zPowers){
+                            for( auto& P3: r_zPowers){
+                                r3_zPowers.push_back(P1+P2+P3);
+                            }
+                        }
+                    }
+                    assert(r3_Constants.size() == 512);
+                    assert(r3_xPowers.size() == 512);
+                    assert(r3_yPowers.size() == 512);
+                    assert(r3_zPowers.size() == 512);
+
+                    for( int cnt = 0; cnt < 512; ++cnt){
+                        integral += r3_Constants[cnt]* 1/((double)r3_xPowers[cnt]+1)* 1/((double)r3_yPowers[cnt]+1)* 1/((double)r3_zPowers[cnt]+1);;
+                    }
+                }
+            }
+        }
+
+    }
+    return integral;
 }
 
 double FP::Integral_Resolution(int* origin, int* width)
 {
     // TODO
+    // origin 左下角
+    // width 長寬高
     assert(_S);
     return 0.0;
 }
