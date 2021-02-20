@@ -315,8 +315,8 @@ double FP::Integral_Resolution3()
     // TODO
     double integral = 0.0;
     if( _Dimension == 2){
-        for( int i = 0; i < _HeatMapSize[0]-1; ++i){
-            for ( int j = 0; j < _HeatMapSize[1]-1; ++j){
+        for( int i = 0; i < _HeatMapSize[0]; ++i){
+            for ( int j = 0; j < _HeatMapSize[1]; ++j){
                 // ax+by+cxy+d = r
                 // compute r^2
                 double r_0 = HeatMap_Resolution(i, j, 0), 
@@ -361,9 +361,9 @@ double FP::Integral_Resolution3()
         }
     }
     else if( _Dimension == 3){
-        for( int i = 0; i < _HeatMapSize[0]-1; ++i){
-            for ( int j = 0; j < _HeatMapSize[1]-1; ++j){
-                for ( int k = 0; k < _HeatMapSize[2]-1; ++k){
+        for( int i = 0; i < _HeatMapSize[0]; ++i){
+            for ( int j = 0; j < _HeatMapSize[1]; ++j){
+                for ( int k = 0; k < _HeatMapSize[2]; ++k){
                     // ax+by+cz+dxy+exz+fyz+gxyz+h = r
                     // compute r^3
                     double r_0 = HeatMap_Resolution(i, j, k),
@@ -425,10 +425,14 @@ double FP::Integral_Resolution3()
                     assert(r3_xPowers.size() == 512);
                     assert(r3_yPowers.size() == 512);
                     assert(r3_zPowers.size() == 512);
-
+                    double localIntegral = 0.0;
                     for( int cnt = 0; cnt < 512; ++cnt){
-                        integral += r3_Constants[cnt]* 1/((double)r3_xPowers[cnt]+1)* 1/((double)r3_yPowers[cnt]+1)* 1/((double)r3_zPowers[cnt]+1);;
+                        localIntegral += r3_Constants[cnt]* 
+                                         1/((double)r3_xPowers[cnt]+1)* 
+                                         1/((double)r3_yPowers[cnt]+1)* 
+                                         1/((double)r3_zPowers[cnt]+1);
                     }
+                    integral += localIntegral;
                 }
             }
         }
@@ -491,25 +495,25 @@ double FP::Integral_Resolution(const int* const origin, int width)
                 else    next_j = ceil(j);
                 if( next_j > h_origin[1]+h_width)
                     next_j = h_origin[1]+h_width;
-                    for( double k = h_origin[2]; k < h_origin[2]+h_width; ){
-                        // compute next_k
-                        double next_k = 0.0;
-                        if( k == (int)k )   next_k = k+1;
-                        else    next_k = ceil(k);
-                        if( next_k > h_origin[2]+h_width)
-                            next_k = h_origin[2]+h_width;
-                        // compute interpolate
-                        integral += ((HeatMap_Resolution(i, j, k)+
-                                      HeatMap_Resolution(i, j, next_k)+
-                                      HeatMap_Resolution(i, next_j, k)+
-                                      HeatMap_Resolution(i, next_j, next_k)+
-                                      HeatMap_Resolution(next_i, j, k)+
-                                      HeatMap_Resolution(next_i, j, next_k)+
-                                      HeatMap_Resolution(next_i, next_j, k)+
-                                      HeatMap_Resolution(next_i, next_j, next_k))/8)*(next_i-i)*(next_j-j)*(next_k-k);
+                for( double k = h_origin[2]; k < h_origin[2]+h_width; ){
+                    // compute next_k
+                    double next_k = 0.0;
+                    if( k == (int)k )   next_k = k+1;
+                    else    next_k = ceil(k);
+                    if( next_k > h_origin[2]+h_width)
+                        next_k = h_origin[2]+h_width;
+                    // compute interpolate
+                    integral += ((HeatMap_Resolution(i, j, k)+
+                                    HeatMap_Resolution(i, j, next_k)+
+                                    HeatMap_Resolution(i, next_j, k)+
+                                    HeatMap_Resolution(i, next_j, next_k)+
+                                    HeatMap_Resolution(next_i, j, k)+
+                                    HeatMap_Resolution(next_i, j, next_k)+
+                                    HeatMap_Resolution(next_i, next_j, k)+
+                                    HeatMap_Resolution(next_i, next_j, next_k))/8)*(next_i-i)*(next_j-j)*(next_k-k);
 
-                        k = next_k;
-                    }
+                    k = next_k;
+                }
                 j = next_j;
             }
             i = next_i;
@@ -517,7 +521,7 @@ double FP::Integral_Resolution(const int* const origin, int width)
     }
 
     delete[] h_origin;
-    return 0.0;
+    return integral*(pow(_S, _Dimension));
 }
 
 // For Partition
@@ -583,7 +587,8 @@ void FP::printConnectivities()
 const string& FP::getLineNextToken(const string& line, size_t& start, bool begin)
 {
     size_t end = line.find(' ', begin ? 0 : start);
-    static string s = line.substr(start, end - start);
+    static string s;
+    s = line.substr(start, end - start);
     start = end + 1;
     return s;
 }
